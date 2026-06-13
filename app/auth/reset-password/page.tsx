@@ -1,10 +1,33 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
+import { useSearchParams } from "next/navigation";
+import { it } from "node:test";
+import { toast } from "sonner";
 
 export default function ResetPassword() {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+
+    const { error } = await authClient.resetPassword({
+      newPassword: password,
+      token,
+    });
+
+    if (error) {
+      toast.error(error.message);
+    }
+  };
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4 py-4 md:px-8">
@@ -33,7 +56,7 @@ export default function ResetPassword() {
             Reset password
           </h1>
 
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label
                 htmlFor="password"
@@ -48,6 +71,8 @@ export default function ResetPassword() {
                   name="password"
                   placeholder="••••••••"
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 pr-10 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 />
                 <button
@@ -77,6 +102,8 @@ export default function ResetPassword() {
                   name="confirmPassword"
                   placeholder="••••••••"
                   required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 pr-10 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 />
                 <button

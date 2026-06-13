@@ -1,7 +1,26 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 export default function ForgotPassword() {
+  const [email, setEmail] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await authClient.requestPasswordReset({
+      email,
+      redirectTo: "/auth/reset-password",
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4 py-4 md:px-8">
       <div className="grid max-w-lg items-center gap-12 lg:max-w-6xl lg:grid-cols-2">
@@ -30,7 +49,7 @@ export default function ForgotPassword() {
             Reset password
           </h1>
 
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label
                 htmlFor="email"
@@ -42,7 +61,9 @@ export default function ForgotPassword() {
                 type="email"
                 id="email"
                 name="email"
-                placeholder="john@readymadeui.com"
+                placeholder="youremail@example.com"
+                onChange={(e) => setEmail(e.target.value)}
+                value={email}
                 required
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
               />
