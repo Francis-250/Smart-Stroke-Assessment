@@ -9,6 +9,7 @@ import {
   username,
 } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
+import { sendEmail } from "./brevo";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -24,18 +25,33 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    admin(),
+    admin({
+      defaultRole: "patient",
+      adminRoles: ["admin"],
+    }),
     phoneNumber(),
     username(),
     twoFactor(),
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
         if (type === "sign-in") {
-          // Send the OTP for sign in
+          await sendEmail({
+            to: email,
+            subject: "Your OTP for Sign-In",
+            html: `<p>Your OTP for sign-in is: <strong>${otp}</strong></p>`,
+          });
         } else if (type === "email-verification") {
-          // Send the OTP for email verification
+          await sendEmail({
+            to: email,
+            subject: "Verify your email",
+            html: `<p>Your OTP for email verification is: <strong>${otp}</strong></p>`,
+          });
         } else {
-          // Send the OTP for password reset
+          await sendEmail({
+            to: email,
+            subject: "Your OTP Code",
+            html: `<p>Your OTP code is: <strong>${otp}</strong></p>`,
+          });
         }
       },
     }),

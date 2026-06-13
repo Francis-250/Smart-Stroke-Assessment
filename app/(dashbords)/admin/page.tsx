@@ -1,0 +1,5 @@
+import React from "react";
+
+export default function AdminDasboard() {
+  return <div>AdminDasboard</div>;
+}

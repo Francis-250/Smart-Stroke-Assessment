@@ -1,160 +1,210 @@
-import React from "react";
-import Image from "next/image";
+"use client";
 
-export default function Login() {
+import { authClient } from "@/lib/auth-client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+
+export default function LoginForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+
+  const router = useRouter();
+
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const { data, error } = await authClient.signIn.email({
+      email,
+      password,
+    });
+
+    if (error) toast.error(error.message);
+
+    if (data) {
+      router.push("/auth/callback");
+    }
+  };
+
+  const handleGoogle = async () => {
+    try {
+      const { error } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/auth/callback",
+      });
+
+      if (error) {
+        toast.error(error?.message || "Failed to sign in with Google");
+      }
+    } catch (error) {
+      toast.error("Something went wrong");
+    }
+  };
+
   return (
-    <div className="flex h-screen flex-col overflow-hidden lg:flex-row">
-      {/* Left Side - Login Form (full width on mobile, half on desktop) */}
-      <div className="flex w-full flex-col justify-center bg-white lg:w-1/2">
-        <div className="mx-auto w-full max-w-md px-6 py-6">
-          {/* Header */}
-          <div className="mb-5 text-center">
-            <h1 className="text-2xl font-semibold text-gray-600 sm:text-3xl">
-              Sign in to your account
-            </h1>
-            <p className="mt-2 text-sm text-gray-400">
-              Not a member?{" "}
-              <a
-                href="#"
-                className="font-medium text-blue-400 hover:text-blue-500"
-              >
-                Start a 14 day free trial
-              </a>
-            </p>
-          </div>
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-4 md:px-8">
+      <div className="grid max-w-lg items-center gap-12 lg:max-w-6xl lg:grid-cols-2">
+        {/* Left Side - Hero Section */}
+        <div>
+          <h2 className="text-4xl font-bold leading-tight text-slate-900 dark:text-slate-50 lg:text-5xl">
+            Seamless Login for Exclusive Access
+          </h2>
+          <p className="mt-6 text-base leading-relaxed text-slate-600 dark:text-slate-400">
+            Immerse yourself in a hassle-free login journey with our intuitively
+            designed login form. Effortlessly access your account.
+          </p>
 
-          {/* Form */}
-          <form className="space-y-4">
+          <div className="mt-6 text-sm text-slate-900 dark:text-slate-50 lg:mt-12">
+            Don&apos;t have an account{" "}
+            <Link
+              href="/auth/register"
+              className="ml-1 font-medium text-blue-700 hover:underline dark:text-blue-500"
+            >
+              Register here
+            </Link>
+          </div>
+        </div>
+
+        {/* Right Side - Login Form */}
+        <div className="w-full max-w-md lg:ml-auto">
+          <h1 className="mb-10 text-3xl font-bold text-slate-900 dark:text-slate-50">
+            Sign in
+          </h1>
+
+          <form className="space-y-6" onSubmit={handleSignIn}>
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-500"
+                className="mb-2 inline-block text-sm font-medium text-slate-900 dark:text-slate-50"
               >
-                Email address
+                Email
               </label>
               <input
+                type="email"
                 id="email"
                 name="email"
-                type="email"
+                placeholder="your@example.com"
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600 placeholder-gray-300 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                onChange={(e) => setEmail(e.target.value)}
+                value={email}
+                className="w-full rounded-md bg-white px-3 py-2.5 text-sm text-slate-900 outline-1 -outline-offset-1 outline-slate-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 dark:bg-neutral-800 dark:text-slate-50 dark:outline-neutral-700"
               />
             </div>
 
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-500"
+                className="mb-2 inline-block text-sm font-medium text-slate-900 dark:text-slate-50"
               >
                 Password
               </label>
               <input
+                type="password"
                 id="password"
                 name="password"
-                type="password"
+                placeholder="••••••••"
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-600 placeholder-gray-300 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                onChange={(e) => setPassword(e.target.value)}
+                value={password}
+                className="w-full rounded-md bg-white px-3 py-2.5 text-sm text-slate-900 outline-1 -outline-offset-1 outline-slate-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 dark:bg-neutral-800 dark:text-slate-50 dark:outline-neutral-700"
               />
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center">
+            <div className="flex flex-wrap items-start gap-2">
+              <label className="group flex items-center has-checked:text-slate-900">
                 <input
-                  id="remember-me"
-                  name="remember-me"
+                  id="remember"
+                  name="remember"
                   type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-400 focus:ring-2 focus:ring-blue-200"
+                  className="sr-only"
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  checked={rememberMe}
                 />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-500"
+                <span
+                  className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-white outline-1 outline-slate-300 group-focus-within:outline-2 group-focus-within:outline-blue-600 group-has-checked:bg-blue-600 group-has-checked:outline-blue-600 dark:bg-neutral-800 dark:outline-neutral-700"
+                  aria-hidden="true"
                 >
+                  <svg
+                    className="size-3 text-white opacity-0 group-has-checked:opacity-100"
+                    viewBox="0 0 12 10"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M1 5l3 3 7-7" />
+                  </svg>
+                </span>
+                <span className="ml-3 text-sm text-slate-700 dark:text-slate-300">
                   Remember me
-                </label>
-              </div>
-              <div className="text-sm">
-                <a
-                  href="#"
-                  className="font-medium text-blue-400 hover:text-blue-500"
-                >
-                  Forgot password?
-                </a>
-              </div>
+                </span>
+              </label>
+
+              <Link
+                href="/auth/forgot-password"
+                className="ml-auto rounded text-sm font-medium text-blue-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-blue-500"
+              >
+                Forgot password?
+              </Link>
             </div>
 
             <button
               type="submit"
-              className="flex w-full justify-center rounded-lg bg-blue-400 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full cursor-pointer rounded-md border border-blue-600 bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white transition-all hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               Sign in
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-400">
-                Or continue with
-              </span>
-            </div>
+          <div className="my-8 flex items-center gap-4">
+            <hr className="w-full border-slate-300 dark:border-neutral-700" />
+            <p className="text-center text-sm text-slate-700 dark:text-slate-300">
+              or
+            </p>
+            <hr className="w-full border-slate-300 dark:border-neutral-700" />
           </div>
 
-          {/* Social Sign In Buttons */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
             <button
-              type="button"
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50"
+              onClick={handleGoogle}
+              className="flex w-full items-center justify-center gap-2.5 rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-900 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-slate-50 dark:hover:bg-neutral-700"
             >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="size-4.5"
+                viewBox="0 0 512 512"
+                aria-hidden="true"
+              >
                 <path
-                  d="M12 0C5.37 0 0 5.37 0 12c0 5.302 3.438 9.8 8.205 11.387.6.113.82-.26.82-.58 0-.287-.01-1.05-.015-2.06-3.338.726-4.042-1.416-4.042-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.082-.73.082-.73 1.205.085 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.468-2.38 1.235-3.22-.123-.3-.535-1.52.117-3.16 0 0 1.008-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.29-1.552 3.297-1.23 3.297-1.23.653 1.64.24 2.86.118 3.16.768.84 1.233 1.91 1.233 3.22 0 4.61-2.804 5.62-5.476 5.92.43.37.824 1.102.824 2.22 0 1.602-.015 2.894-.015 3.287 0 .322.216.698.83.578C20.565 21.795 24 17.3 24 12c0-6.63-5.37-12-12-12z"
-                  fill="#24292F"
+                  fill="#fbbd00"
+                  d="M120 256c0-25.367 6.989-49.13 19.131-69.477v-86.308H52.823C18.568 144.703 0 198.922 0 256s18.568 111.297 52.823 155.785h86.308v-86.308C126.989 305.13 120 281.367 120 256z"
+                />
+                <path
+                  fill="#0f9d58"
+                  d="m256 392-60 60 60 60c57.079 0 111.297-18.568 155.785-52.823v-86.216h-86.216C305.044 385.147 281.181 392 256 392z"
+                />
+                <path
+                  fill="#31aa52"
+                  d="m139.131 325.477-86.308 86.308a260.085 260.085 0 0 0 22.158 25.235C123.333 485.371 187.62 512 256 512V392c-49.624 0-93.117-26.72-116.869-66.523z"
+                />
+                <path
+                  fill="#3c79e6"
+                  d="M512 256a258.24 258.24 0 0 0-4.192-46.377l-2.251-12.299H256v120h121.452a135.385 135.385 0 0 1-51.884 55.638l86.216 86.216a260.085 260.085 0 0 0 25.235-22.158C485.371 388.667 512 324.38 512 256z"
+                />
+                <path
+                  fill="#cf2d48"
+                  d="m352.167 159.833 10.606 10.606 84.853-84.852-10.606-10.606C388.668 26.629 324.381 0 256 0l-60 60 60 60c36.326 0 70.479 14.146 96.167 39.833z"
+                />
+                <path
+                  fill="#eb4132"
+                  d="M256 120V0C187.62 0 123.333 26.629 74.98 74.98a259.849 259.849 0 0 0-22.158 25.235l86.308 86.308C162.883 146.72 206.376 120 256 120z"
                 />
               </svg>
-              <span>GitHub</span>
-            </button>
-
-            <button
-              type="button"
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
-              </svg>
-              <span>Google</span>
+              Sign in with Google
             </button>
           </div>
         </div>
       </div>
-
-      {/* Right Side - Image (hidden on mobile, visible on desktop) */}
-      <div className="relative hidden h-full lg:block lg:w-1/2">
-        <Image
-          src="https://images.unsplash.com/photo-1556761175-4b46a572b786?w=800&h=1000&fit=crop"
-          alt="Login illustration"
-          fill
-          className="object-cover"
-          priority
-        />
-      </div>
-    </div>
+    </main>
   );
 }
