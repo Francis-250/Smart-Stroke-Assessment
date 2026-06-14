@@ -2,11 +2,14 @@
   "name": "ssa",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.32.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
     "db:seed": "prisma db seed"
   },
   "dependencies": {
