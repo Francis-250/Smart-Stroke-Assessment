@@ -14,3 +14,13 @@ export async function requirePatientPage() {
 
   return session;
 }
+
+export async function requirePatientAction() {
+  const session = await getServerSession();
+
+  if (!session?.user || !isPatientRole(session.user.role)) {
+    throw new Error("Unauthorized");
+  }
+
+  return session;
+}

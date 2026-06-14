@@ -102,8 +102,14 @@ export default function VerifyOTP() {
 
       if (data) {
         toast.success("Email verified successfully!");
-        sessionStorage.removeItem("verifyEmail");
-        router.push("/auth/login");
+        const role = sessionStorage.getItem("registrationRole");
+        if (role === "doctor") {
+          router.push("/auth/doctor-onboarding");
+        } else {
+          sessionStorage.removeItem("verifyEmail");
+          sessionStorage.removeItem("registrationRole");
+          router.push("/auth/login");
+        }
       }
     } catch (error) {
       console.error("Verification error:", error);
@@ -133,7 +139,7 @@ export default function VerifyOTP() {
         return;
       }
 
-      toast.success("New verification code sent to your email!");
+      toast.success(`New verification code sent to ${email}`);
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } catch (error) {
@@ -156,8 +162,11 @@ export default function VerifyOTP() {
             Verify Your <br /> Identity
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
-            We&apos;ve sent a 6-digit verification code to your email address.
-            Enter the code below to continue.
+            We&apos;ve sent a 6-digit verification code to{" "}
+            <span className="font-medium text-foreground">
+              {email ?? "your email address"}
+            </span>
+            . Enter the code below to continue.
           </p>
           <p className="mt-10 text-sm text-muted-foreground">
             Didn&apos;t receive the code?{" "}
@@ -208,7 +217,7 @@ export default function VerifyOTP() {
                 ))}
               </div>
               <p className="mt-4 text-center text-xs text-muted-foreground">
-                Enter the 6-digit code sent to your email
+                Enter the 6-digit code sent to {email ?? "your email"}
               </p>
             </div>
 

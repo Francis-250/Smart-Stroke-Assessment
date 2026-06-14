@@ -4,7 +4,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { roleHome } from "@/lib/auth-routing";
+import { getPostLoginDestination } from "@/actions/auth/registration";
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -23,7 +23,9 @@ export default function AuthCallback() {
         }
 
         if (session) {
-          router.replace(roleHome(session.user.role));
+          const access = await getPostLoginDestination();
+          if (access.blocked) await authClient.signOut();
+          router.replace(access.destination);
         } else {
           setError("No session found");
           setTimeout(() => router.push("/auth/login"), 2000);

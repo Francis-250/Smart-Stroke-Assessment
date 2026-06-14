@@ -9,6 +9,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const requiredRole = roleForPath(pathname);
   const authEntry = pathname === "/auth/login" || pathname === "/auth/register";
+  const isPageRequest = request.method === "GET" || request.method === "HEAD";
 
   if (!session?.user) {
     if (requiredRole) {
@@ -19,7 +20,7 @@ export async function proxy(request: NextRequest) {
 
   const home = roleHome(session.user.role);
 
-  if (authEntry) {
+  if (authEntry && isPageRequest) {
     return NextResponse.redirect(new URL(home, request.url));
   }
 

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PatientDoctorAssignment } from "@/components/patient-doctor-assignment";
 import { Separator } from "@/components/ui/separator";
 import { getServerSession } from "@/hooks/get-server-session";
 import prisma from "@/lib/prisma";
@@ -106,6 +107,8 @@ export default async function SingleAssessment({
           },
         },
       },
+      doctorAssignment: true,
+      doctorFeedback: true,
     },
   });
 
@@ -118,6 +121,19 @@ export default async function SingleAssessment({
   const confidence = Math.round(assessment.confidenceScore * 100);
   const symptoms = asStringArray(assessment.detectedSymptoms);
   const latestComment = assessment.doctorComments[0];
+  const approvedDoctors = await prisma.doctorProfile.findMany({
+    where: { isApprovedByAdmin: true, isVerified: true },
+    orderBy: { user: { name: "asc" } },
+    select: {
+      id: true,
+      specialization: true,
+      hospitalName: true,
+      user: { select: { name: true } },
+    },
+  });
+  const existingFeedback = assessment.doctorFeedback.find(
+    (item) => item.doctorProfileId === assessment.doctorAssignment?.doctorProfileId,
+  );
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
@@ -306,6 +322,18 @@ export default async function SingleAssessment({
               </p>
             </div>
           )}
+
+          <PatientDoctorAssignment
+            assessmentId={assessment.id}
+            assignedDoctorId={assessment.doctorAssignment?.doctorProfileId}
+            existingFeedback={existingFeedback?.comment}
+            doctors={approvedDoctors.map((doctor) => ({
+              id: doctor.id,
+              name: doctor.user.name,
+              specialization: doctor.specialization ?? "Doctor",
+              hospital: doctor.hospitalName ?? "Hospital not provided",
+            }))}
+          />
 
           <p className="text-xs text-muted-foreground">
             This is not a medical diagnosis. Always consult a qualified

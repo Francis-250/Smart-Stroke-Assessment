@@ -10,21 +10,48 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { getPostLoginDestination } from "@/actions/auth/registration";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoginError(null);
     setLoading(true);
-    const { data, error } = await authClient.signIn.email({ email, password });
-    setLoading(false);
-    if (error) toast.error(error.message);
-    if (data) router.push("/auth/callback");
+    try {
+      const { data, error } = await authClient.signIn.email({ email, password });
+      if (error) {
+        const message = error.message || "Invalid email or password.";
+        setLoginError(message);
+        toast.error(message);
+        return;
+      }
+      if (data) {
+        const access = await getPostLoginDestination();
+        if (access.blocked) {
+          await authClient.signOut();
+          const message =
+            access.reason ??
+            "Your doctor account is waiting for administrator approval.";
+          setLoginError(message);
+          toast.error(message);
+        }
+        router.push(access.destination);
+        router.refresh();
+      }
+    } catch {
+      const message = "Unable to sign in. Please try again.";
+      setLoginError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogle = async () => {
@@ -118,6 +145,11 @@ export default function LoginForm() {
                 : "Sign in"
               }
             </Button>
+            {loginError && (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                {loginError}
+              </p>
+            )}
           </form>
 
           <div className="my-6 flex items-center gap-3">

@@ -22,6 +22,7 @@ type NotifType =
   | "HIGH_RISK_ALERT"
   | "DOCTOR_ALERT"
   | "DOCTOR_COMMENT"
+  | "DOCTOR_ASSIGNED"
   | "ASSESSMENT_RESULT"
   | "SYSTEM";
 type NotifStatus = "UNREAD" | "READ";
@@ -52,6 +53,11 @@ const typeConfig: Record<
   },
   DOCTOR_COMMENT: {
     icon: MessageSquare,
+    iconClass: "text-blue-500",
+    borderClass: "border-border",
+  },
+  DOCTOR_ASSIGNED: {
+    icon: CheckCircle,
     iconClass: "text-blue-500",
     borderClass: "border-border",
   },
@@ -167,6 +173,7 @@ export function PatientNotificationsClient({
               {[
                 { type: "HIGH_RISK_ALERT", label: "Risk alerts" },
                 { type: "DOCTOR_COMMENT", label: "Doctor notes" },
+                { type: "DOCTOR_ASSIGNED", label: "Doctor assignments" },
                 { type: "ASSESSMENT_RESULT", label: "Results" },
                 { type: "SYSTEM", label: "System" },
               ].map(({ type, label }) => {

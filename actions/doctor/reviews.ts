@@ -19,11 +19,18 @@ export async function addDoctorComment(input: {
     prisma.doctorProfile.findUnique({ where: { userId: session.user.id } }),
     prisma.assessment.findUnique({
       where: { id: input.assessmentId },
-      select: { id: true, userId: true },
+      select: {
+        id: true,
+        userId: true,
+        doctorAssignment: { select: { doctorProfileId: true } },
+      },
     }),
   ]);
   if (!doctor) throw new Error("Complete your doctor profile before reviewing assessments.");
   if (!assessment) throw new Error("Assessment not found.");
+  if (assessment.doctorAssignment?.doctorProfileId !== doctor.id) {
+    throw new Error("This assessment is not assigned to you.");
+  }
 
   const requestHeaders = await headers();
   await prisma.$transaction([

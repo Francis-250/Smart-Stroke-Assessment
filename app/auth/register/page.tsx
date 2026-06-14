@@ -11,6 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { User, Stethoscope } from "lucide-react";
+import {
+  createDoctorRegistrationIntent,
+  startDoctorRegistration,
+} from "@/actions/auth/registration";
 
 export default function Register() {
   const router = useRouter();
@@ -46,8 +50,13 @@ export default function Register() {
     setLoading(true);
 
     try {
+      const verificationEmail = email.trim().toLowerCase();
+      const doctorIntent =
+        selectedRole === "doctor"
+          ? await createDoctorRegistrationIntent(verificationEmail)
+          : null;
       const { data, error } = await authClient.signUp.email({
-        email,
+        email: verificationEmail,
         password,
         name,
         callbackURL: "/auth/verify-otp",
@@ -60,12 +69,31 @@ export default function Register() {
       }
 
       if (data) {
-        sessionStorage.setItem("verifyEmail", email);
-        await authClient.emailOtp.sendVerificationOtp({
-          email,
+        if (doctorIntent) {
+          await startDoctorRegistration(verificationEmail, doctorIntent);
+        }
+        sessionStorage.setItem("verifyEmail", verificationEmail);
+        sessionStorage.setItem("registrationRole", selectedRole ?? "patient");
+        if (doctorIntent) {
+          sessionStorage.setItem("doctorRegistrationIntent", doctorIntent);
+        } else {
+          sessionStorage.removeItem("doctorRegistrationIntent");
+        }
+        const { error: otpError } = await authClient.emailOtp.sendVerificationOtp({
+          email: verificationEmail,
           type: "email-verification",
         });
-        toast.success("Verification code sent to your email!");
+
+        if (otpError) {
+          toast.error(
+            otpError.message ||
+              `Account created, but the code could not be sent to ${verificationEmail}.`,
+          );
+          router.push("/auth/verify-otp");
+          return;
+        }
+
+        toast.success(`Verification code sent to ${verificationEmail}`);
         router.push("/auth/verify-otp");
       }
     } catch (error) {
@@ -77,6 +105,13 @@ export default function Register() {
   };
 
   const handleGoogleSignUp = async () => {
+    if (selectedRole === "doctor") {
+      toast.error(
+        "Doctor registration requires email and password so credentials can be submitted for approval.",
+      );
+      return;
+    }
+
     try {
       const { error } = await authClient.signIn.social({
         provider: "google",

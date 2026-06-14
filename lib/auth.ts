@@ -11,7 +11,7 @@ import {
 
 import { ac, admin, doctor, patient } from "./permission";
 import { nextCookies } from "better-auth/next-js";
-import { sendEmail } from "./brevo";
+import { sendEmail, sendEmailOrThrow } from "./brevo";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -47,15 +47,18 @@ export const auth = betterAuth({
     twoFactor(),
     emailOTP({
       otpLength: 6,
+      expiresIn: 600,
+      resendStrategy: "rotate",
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (type === "email-verification") {
-          await sendEmail({
+          await sendEmailOrThrow({
             to: email,
-            subject: "Verify your email address",
+            subject: `${otp} is your StrokeCheck verification code`,
+            text: `Your StrokeCheck verification code is ${otp}. It expires in 10 minutes.`,
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #2563eb;">Email Verification</h2>
-                <p>Thank you for signing up! Please verify your email address using the code below:</p>
+                <h2>Verify your StrokeCheck email</h2>
+                <p>This code was requested for <strong>${email}</strong>.</p>
                 <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
                   <code style="font-size: 32px; font-weight: bold; letter-spacing: 4px;">${otp}</code>
                 </div>
@@ -67,15 +70,17 @@ export const auth = betterAuth({
             `,
           });
         } else if (type === "sign-in") {
-          await sendEmail({
+          await sendEmailOrThrow({
             to: email,
             subject: "Your OTP for Sign-In",
+            text: `Your StrokeCheck sign-in code is ${otp}.`,
             html: `<p>Your OTP for sign-in is: <strong>${otp}</strong></p>`,
           });
         } else {
-          await sendEmail({
+          await sendEmailOrThrow({
             to: email,
             subject: "Your OTP Code",
+            text: `Your StrokeCheck OTP code is ${otp}.`,
             html: `<p>Your OTP code is: <strong>${otp}</strong></p>`,
           });
         }

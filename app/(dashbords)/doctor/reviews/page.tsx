@@ -4,9 +4,10 @@ import { asStringArray, formatDate, formatTime, riskOrder } from "@/lib/doctor";
 import prisma from "@/lib/prisma";
 
 export default async function DoctorReviews() {
-  await requireDoctorPage();
+  const session = await requireDoctorPage();
 
   const assessments = await prisma.assessment.findMany({
+    where: { doctorAssignment: { doctorProfile: { userId: session.user.id } } },
     include: { user: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });

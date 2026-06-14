@@ -38,11 +38,11 @@ export default async function DoctorReviewDetail({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireDoctorPage();
+  const session = await requireDoctorPage();
 
   const { id } = await params;
-  const assessment = await prisma.assessment.findUnique({
-    where: { id },
+  const assessment = await prisma.assessment.findFirst({
+    where: { id, doctorAssignment: { doctorProfile: { userId: session.user.id } } },
     include: {
       user: { include: { patientProfile: true } },
       doctorComments: {

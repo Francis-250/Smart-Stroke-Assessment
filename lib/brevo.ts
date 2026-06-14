@@ -8,8 +8,9 @@ interface EmailOptions {
 export const sendEmail = async ({ to, subject, html, text }: EmailOptions) => {
   try {
     const apiKey = process.env.BREVO_API_KEY;
-    const senderEmail = process.env.BREVO_SENDER_EMAIL;
-    const senderName = process.env.BREVO_SENDER_NAME || "InkingiPro";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL ?? process.env.BREVO_EMAIL_USER;
+    const senderName = process.env.BREVO_SENDER_NAME || "StrokeCheck";
 
     if (!apiKey) {
       console.error("Email error: BREVO_API_KEY is not configured");
@@ -41,7 +42,13 @@ export const sendEmail = async ({ to, subject, html, text }: EmailOptions) => {
     });
 
     const responseText = await response.text();
-    const responseBody = responseText ? JSON.parse(responseText) : null;
+    let responseBody: unknown = responseText;
+
+    try {
+      responseBody = responseText ? JSON.parse(responseText) : null;
+    } catch {
+      // Brevo can return a non-JSON proxy response.
+    }
 
     if (!response.ok) {
       console.error("Brevo email error:", {
@@ -56,6 +63,14 @@ export const sendEmail = async ({ to, subject, html, text }: EmailOptions) => {
   } catch (error) {
     console.error("Email error:", error);
     return false;
+  }
+};
+
+export const sendEmailOrThrow = async (options: EmailOptions) => {
+  const sent = await sendEmail(options);
+
+  if (!sent) {
+    throw new Error("Email delivery failed. Check the Brevo sender configuration.");
   }
 };
 

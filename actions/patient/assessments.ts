@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { getServerSession } from "@/hooks/get-server-session";
 import prisma from "@/lib/prisma";
 import {
   classifyStrokeRisk,
@@ -14,6 +13,8 @@ import {
   sendAssessmentResultEmail,
   sendDoctorAlertEmail,
 } from "@/lib/brevo";
+import { assertAiAssessmentAvailable } from "@/lib/ai-limits";
+import { requirePatientAction } from "@/lib/patient-auth";
 
 type CreateAssessmentInput = {
   symptoms: string[];
@@ -114,11 +115,9 @@ async function runClassification(symptoms: string) {
 }
 
 export async function createAssessment(input: CreateAssessmentInput) {
-  const session = await getServerSession();
+  const session = await requirePatientAction();
 
-  if (!session?.user) {
-    throw new Error("Unauthorized");
-  }
+  await assertAiAssessmentAvailable(session.user.id);
 
   const symptoms = input.symptoms.filter(Boolean);
   const symptomsText = input.symptomsText?.trim() ?? "";
