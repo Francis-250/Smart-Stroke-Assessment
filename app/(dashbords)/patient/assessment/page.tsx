@@ -1,24 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowRight,
-  Smile,
-  Hand,
-  MessageCircle,
-  Eye,
-  Brain,
-  RefreshCw,
-  HelpCircle,
   Activity,
+  ArrowRight,
+  Brain,
+  Eye,
   Footprints,
+  Hand,
+  HelpCircle,
+  MessageCircle,
+  RefreshCw,
+  Smile,
   ThumbsDown,
 } from "lucide-react";
+import { createAssessment } from "@/actions/patient/assessments";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 const symptoms = [
@@ -48,7 +49,8 @@ export default function Assessment() {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
   const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const toggle = (id: string) =>
     setSelected((p) =>
@@ -60,11 +62,25 @@ export default function Assessment() {
   ).length;
   const canSubmit = selected.length > 0 || text.trim().length > 0;
 
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 400));
-    router.push("/patient/assessment/1");
+  const handleSubmit = () => {
+    if (!canSubmit || isPending) return;
+    setError(null);
+
+    startTransition(async () => {
+      try {
+        const result = await createAssessment({
+          symptoms: selected,
+          symptomsText: text,
+        });
+        router.push(`/patient/assessment/${result.assessmentId}`);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to create assessment. Please try again.",
+        );
+      }
+    });
   };
 
   return (
@@ -80,9 +96,7 @@ export default function Assessment() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sidebar */}
         <div className="space-y-4 order-2 lg:order-1">
-          {/* FAST live tracker */}
           <div className="rounded-lg border p-4">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
               FAST score
@@ -104,13 +118,12 @@ export default function Assessment() {
             </div>
             <p className="text-xs text-muted-foreground">
               {fastCount === 0 && "No FAST symptoms selected"}
-              {fastCount === 1 && "1 FAST symptom — monitor carefully"}
-              {fastCount === 2 && "2 FAST symptoms — seek urgent care"}
-              {fastCount >= 3 && "3+ FAST symptoms — call 911 now"}
+              {fastCount === 1 && "1 FAST symptom: monitor carefully"}
+              {fastCount === 2 && "2 FAST symptoms: seek urgent care"}
+              {fastCount >= 3 && "3+ FAST symptoms: call emergency services"}
             </p>
           </div>
 
-          {/* FAST guide */}
           <div className="rounded-lg border p-4">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
               What is FAST?
@@ -120,14 +133,14 @@ export default function Assessment() {
                 { l: "F", t: "Face", d: "Is one side drooping?" },
                 { l: "A", t: "Arms", d: "Can you raise both?" },
                 { l: "S", t: "Speech", d: "Is it slurred?" },
-                { l: "T", t: "Time", d: "Call 911 immediately" },
+                { l: "T", t: "Time", d: "Call emergency services" },
               ].map(({ l, t, d }) => (
                 <div key={l} className="flex items-center gap-3">
                   <span className="w-5 h-5 rounded bg-muted text-[11px] font-bold flex items-center justify-center flex-shrink-0">
                     {l}
                   </span>
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">{t}</span> —{" "}
+                    <span className="font-medium text-foreground">{t}</span>:{" "}
                     {d}
                   </p>
                 </div>
@@ -141,7 +154,6 @@ export default function Assessment() {
           </p>
         </div>
 
-        {/* Main form */}
         <div className="lg:col-span-2 order-1 lg:order-2 space-y-5">
           <div className="rounded-lg border p-5">
             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4 block">
@@ -153,9 +165,10 @@ export default function Assessment() {
                 return (
                   <button
                     key={id}
+                    type="button"
                     onClick={() => toggle(id)}
                     className={cn(
-                      "relative flex items-center gap-2.5 px-3 py-2.5 rounded-md border text-sm transition-colors text-left",
+                      "relative flex min-h-10 items-center gap-2.5 px-3 py-2.5 rounded-md border text-sm transition-colors text-left",
                       active
                         ? "bg-primary/5 border-primary text-primary"
                         : "bg-background border-border text-foreground hover:bg-muted/50",
@@ -197,14 +210,34 @@ export default function Assessment() {
             />
           </div>
 
+          {isPending && (
+            <div className="rounded-lg border p-4">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-muted border-t-foreground animate-spin" />
+                AI assessment in progress
+              </div>
+              <Separator className="my-3" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Running the clinical assessment and structured risk
+                classification. This may take a few seconds.
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+              {error}
+            </p>
+          )}
+
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
               {selected.length > 0
                 ? `${selected.length} symptom${selected.length > 1 ? "s" : ""} selected`
                 : "Nothing selected yet"}
             </p>
-            <Button onClick={handleSubmit} disabled={!canSubmit || loading}>
-              {loading ? (
+            <Button onClick={handleSubmit} disabled={!canSubmit || isPending}>
+              {isPending ? (
                 <span className="h-3.5 w-3.5 rounded-full border-2 border-background/40 border-t-background animate-spin" />
               ) : (
                 <>

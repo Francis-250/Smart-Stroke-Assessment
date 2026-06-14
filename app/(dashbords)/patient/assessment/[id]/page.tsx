@@ -1,24 +1,36 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 import {
+  AlertCircle,
+  AlertTriangle,
+  Brain,
+  CheckCircle,
   ChevronLeft,
   Clock,
   MessageSquare,
   RefreshCw,
-  Brain,
-  AlertTriangle,
-  CheckCircle,
-  AlertCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { getServerSession } from "@/hooks/get-server-session";
+import prisma from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 
 type Risk = "HIGH" | "MEDIUM" | "LOW";
 
-const cfg = {
+const cfg: Record<
+  Risk,
+  {
+    icon: React.ElementType;
+    iconColor: string;
+    label: string;
+    labelColor: string;
+    ring: string;
+    badge: string;
+    bar: string;
+  }
+> = {
   HIGH: {
     icon: AlertTriangle,
     iconColor: "text-red-500",
@@ -27,7 +39,6 @@ const cfg = {
     ring: "border-red-200 bg-red-50",
     badge: "bg-red-50 text-red-700 border-red-200",
     bar: "bg-red-500",
-    rec: "Your symptoms indicate a high stroke risk. Call 911 or emergency services immediately. Do not drive yourself.",
   },
   MEDIUM: {
     icon: AlertCircle,
@@ -37,7 +48,6 @@ const cfg = {
     ring: "border-amber-200 bg-amber-50",
     badge: "bg-amber-50 text-amber-700 border-amber-200",
     bar: "bg-amber-400",
-    rec: "Seek urgent medical attention today. Go to your nearest emergency room or call your doctor now.",
   },
   LOW: {
     icon: CheckCircle,
@@ -47,64 +57,89 @@ const cfg = {
     ring: "border-green-200 bg-green-50",
     badge: "bg-green-50 text-green-700 border-green-200",
     bar: "bg-green-500",
-    rec: "No major stroke indicators detected. Monitor your symptoms and consult a doctor within 48 hours if they persist.",
   },
 };
 
-const mock = {
-  id: "1",
-  date: "Jun 12, 2026",
-  time: "10:32 AM",
-  risk: "HIGH" as Risk,
-  confidence: 91,
-  fastScore: 2,
-  symptoms: ["Facial drooping", "Arm weakness"],
-  text: "My left arm feels very heavy and the left side of my face feels numb.",
-  aiResponse: `Based on the symptoms you reported, I have identified 2 of the 4 FAST stroke indicators — facial drooping and arm weakness. Both are strong clinical markers of a cerebrovascular event.
+function formatDateTime(date: Date) {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
 
-Combined with your reported age and history of hypertension, this assessment indicates a high probability of an acute stroke. The asymmetric presentation of symptoms on one side of the body further supports this.
+function asStringArray(value: unknown) {
+  return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
+}
 
-You should call emergency services immediately. Do not eat, drink, or take any medication before speaking to a doctor. Note the time your symptoms started — this is critical information for the medical team.`,
-  doctor: {
-    name: "Dr. A. Smith",
-    specialty: "Neurologist",
-    comment:
-      "Patient shows two classic FAST indicators. I have flagged this for immediate review. If symptoms worsen before your appointment, call our emergency line directly.",
-    date: "Jun 12, 2026 · 2:45 PM",
-    urgent: true,
-  },
-};
+export default async function SingleAssessment({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const session = await getServerSession();
 
-export default function SingleAssessment() {
-  const router = useRouter();
-  const a = mock;
-  const c = cfg[a.risk];
+  if (!session?.user) {
+    redirect("/auth/login");
+  }
+
+  const { id } = await params;
+  const assessment = await prisma.assessment.findFirst({
+    where: {
+      id,
+      userId: session.user.id,
+    },
+    include: {
+      doctorComments: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          doctorProfile: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!assessment) {
+    notFound();
+  }
+
+  const c = cfg[assessment.riskLevel];
   const Icon = c.icon;
+  const confidence = Math.round(assessment.confidenceScore * 100);
+  const symptoms = asStringArray(assessment.detectedSymptoms);
+  const latestComment = assessment.doctorComments[0];
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 mb-8">
-        <button
-          onClick={() => router.back()}
+      <div className="flex flex-wrap items-center gap-2 mb-8">
+        <Link
+          href="/patient"
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ChevronLeft size={15} /> Back
-        </button>
+        </Link>
         <span className="text-muted-foreground/40">/</span>
         <span className="text-sm text-muted-foreground">
-          Assessment #{a.id}
+          Assessment #{assessment.id.slice(0, 8)}
         </span>
         <span className="text-muted-foreground/40">/</span>
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Clock size={12} /> {a.date} · {a.time}
+          <Clock size={12} /> {formatDateTime(assessment.createdAt)}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left — result card */}
         <div className="space-y-4">
-          {/* Risk */}
           <div className="rounded-lg border p-5">
             <div
               className={cn(
@@ -118,17 +153,16 @@ export default function SingleAssessment() {
               {c.label}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5 mb-4">
-              Confidence: {a.confidence}%
+              Confidence: {confidence}%
             </p>
             <div className="h-1.5 bg-muted rounded-full overflow-hidden">
               <div
                 className={cn("h-full rounded-full", c.bar)}
-                style={{ width: `${a.confidence}%` }}
+                style={{ width: `${confidence}%` }}
               />
             </div>
           </div>
 
-          {/* FAST score */}
           <div className="rounded-lg border p-4">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
               FAST score
@@ -139,7 +173,7 @@ export default function SingleAssessment() {
                   key={l}
                   className={cn(
                     "flex-1 h-8 rounded flex items-center justify-center text-xs font-bold",
-                    i < a.fastScore
+                    i < assessment.fastScore
                       ? "bg-red-100 text-red-700 border border-red-200"
                       : "bg-muted text-muted-foreground",
                   )}
@@ -149,18 +183,17 @@ export default function SingleAssessment() {
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              {a.fastScore} of 4 indicators
+              {assessment.fastScore} of 4 indicators
             </p>
           </div>
 
-          {/* Detected symptoms */}
           <div className="rounded-lg border p-4">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
               Detected symptoms
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {a.symptoms.length > 0 ? (
-                a.symptoms.map((s) => (
+              {symptoms.length > 0 ? (
+                symptoms.map((s) => (
                   <span
                     key={s}
                     className="text-xs bg-muted px-2.5 py-1 rounded-sm font-medium"
@@ -172,46 +205,40 @@ export default function SingleAssessment() {
                 <p className="text-xs text-muted-foreground">None flagged</p>
               )}
             </div>
-            {a.text && (
+            {assessment.symptomsText && (
               <>
                 <Separator className="my-3" />
                 <p className="text-[11px] text-muted-foreground mb-1">
                   Patient description
                 </p>
                 <p className="text-xs text-muted-foreground italic leading-relaxed">
-                  &quot;{a.text}&quot;
+                  &quot;{assessment.symptomsText}&quot;
                 </p>
               </>
             )}
           </div>
 
-          {/* Actions */}
           <div className="space-y-2">
-            <Button
-              className="w-full"
-              onClick={() => router.push("/patient/assessment")}
-            >
-              <RefreshCw size={13} className="mr-2" /> New assessment
+            <Button asChild className="w-full">
+              <Link href="/patient/assessment">
+                <RefreshCw size={13} className="mr-2" /> New assessment
+              </Link>
             </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => router.back()}
-            >
-              <ChevronLeft size={13} className="mr-1" /> Back
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/patient">
+                <ChevronLeft size={13} className="mr-1" /> Back
+              </Link>
             </Button>
           </div>
         </div>
 
-        {/* Right — details */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Recommendation */}
           <div
             className={cn(
               "rounded-lg border p-4",
-              a.risk === "HIGH"
+              assessment.riskLevel === "HIGH"
                 ? "border-red-200 bg-red-50"
-                : a.risk === "MEDIUM"
+                : assessment.riskLevel === "MEDIUM"
                   ? "border-amber-200 bg-amber-50"
                   : "border-green-200 bg-green-50",
             )}
@@ -219,10 +246,11 @@ export default function SingleAssessment() {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
               Recommendation
             </p>
-            <p className="text-sm leading-relaxed">{c.rec}</p>
+            <p className="text-sm leading-relaxed">
+              {assessment.recommendation}
+            </p>
           </div>
 
-          {/* AI response */}
           <div className="rounded-lg border p-5">
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
@@ -236,16 +264,15 @@ export default function SingleAssessment() {
               </div>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-              {a.aiResponse}
+              {assessment.aiResponse}
             </p>
           </div>
 
-          {/* Doctor comment */}
-          {a.doctor && (
+          {latestComment && (
             <div
               className={cn(
                 "rounded-lg border p-5",
-                a.doctor.urgent && "border-red-200",
+                latestComment.isUrgent && "border-red-200",
               )}
             >
               <div className="flex items-start justify-between mb-4">
@@ -257,22 +284,26 @@ export default function SingleAssessment() {
                     />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{a.doctor.name}</p>
+                    <p className="text-sm font-medium">
+                      {latestComment.doctorProfile.user.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {a.doctor.specialty}
+                      {latestComment.doctorProfile.specialization ?? "Doctor"}
                     </p>
                   </div>
                 </div>
-                {a.doctor.urgent && (
+                {latestComment.isUrgent && (
                   <Badge variant="destructive" className="text-[11px]">
                     Urgent
                   </Badge>
                 )}
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                {a.doctor.comment}
+                {latestComment.comment}
               </p>
-              <p className="text-xs text-muted-foreground">{a.doctor.date}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatDateTime(latestComment.createdAt)}
+              </p>
             </div>
           )}
 

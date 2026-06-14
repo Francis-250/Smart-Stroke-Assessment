@@ -58,3 +58,66 @@ export const sendEmail = async ({ to, subject, html, text }: EmailOptions) => {
     return false;
   }
 };
+
+export const sendDoctorAlertEmail = async ({
+  patientName,
+  assessmentId,
+  riskLevel,
+  confidenceScore,
+}: {
+  patientName: string;
+  assessmentId: string;
+  riskLevel: string;
+  confidenceScore: number;
+}) => {
+  const doctorAlertEmail = process.env.DOCTOR_ALERT_EMAIL;
+
+  if (!doctorAlertEmail) {
+    console.error("Email error: DOCTOR_ALERT_EMAIL is not configured");
+    return false;
+  }
+
+  return sendEmail({
+    to: doctorAlertEmail,
+    subject: `High-risk stroke assessment: ${patientName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>High-risk stroke assessment</h2>
+        <p><strong>${patientName}</strong> submitted an assessment that requires doctor review.</p>
+        <p>Risk level: <strong>${riskLevel}</strong></p>
+        <p>Confidence: <strong>${Math.round(confidenceScore * 100)}%</strong></p>
+        <p>Assessment ID: <strong>${assessmentId}</strong></p>
+      </div>
+    `,
+  });
+};
+
+export const sendAssessmentResultEmail = async ({
+  to,
+  patientName,
+  riskLevel,
+  confidenceScore,
+  recommendation,
+}: {
+  to: string;
+  patientName: string;
+  riskLevel: string;
+  confidenceScore: number;
+  recommendation: string;
+}) => {
+  return sendEmail({
+    to,
+    subject: `Your stroke assessment result: ${riskLevel}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Assessment complete</h2>
+        <p>Hello ${patientName},</p>
+        <p>Your stroke symptom assessment has been processed.</p>
+        <p>Risk level: <strong>${riskLevel}</strong></p>
+        <p>Confidence: <strong>${Math.round(confidenceScore * 100)}%</strong></p>
+        <p>${recommendation}</p>
+        <p>This is not a medical diagnosis. Always consult a qualified healthcare professional.</p>
+      </div>
+    `,
+  });
+};

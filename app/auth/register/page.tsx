@@ -86,7 +86,7 @@ export default function Register() {
       if (error) {
         toast.error(error.message);
       }
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong");
     }
   };

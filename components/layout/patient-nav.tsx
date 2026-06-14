@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Stethoscope, Bell, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 
 const links = [
   { label: "Home", href: "/patient", icon: Home },
@@ -13,7 +12,13 @@ const links = [
   { label: "Profile", href: "/patient/profile", icon: User },
 ];
 
-export default function PatientNav() {
+export default function PatientNav({
+  initials,
+  unreadCount,
+}: {
+  initials?: string | null;
+  unreadCount?: number;
+}) {
   const path = usePathname();
 
   return (
@@ -49,10 +54,12 @@ export default function PatientNav() {
           <div className="flex items-center gap-3">
             <Link href="/patient/notifications" className="relative">
               <Bell size={17} className="text-muted-foreground" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full" />
+              {(unreadCount ?? 0) > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full" />
+              )}
             </Link>
             <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-              JD
+              {initials ?? "--"}
             </div>
           </div>
         </div>

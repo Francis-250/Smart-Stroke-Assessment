@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { useSearchParams } from "next/navigation";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
-export default function ResetPassword() {
+function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -168,5 +168,19 @@ export default function ResetPassword() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ResetPassword() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center px-4 py-12">
+          <div className="h-5 w-5 rounded-full border-2 border-muted border-t-foreground animate-spin" />
+        </main>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

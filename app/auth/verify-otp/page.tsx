@@ -19,7 +19,7 @@ export default function VerifyOTP() {
   useEffect(() => {
     const storedEmail = sessionStorage.getItem("verifyEmail");
     if (storedEmail) {
-      setEmail(storedEmail);
+      queueMicrotask(() => setEmail(storedEmail));
     } else {
       toast.error("Please register first");
       router.push("/auth/register");
