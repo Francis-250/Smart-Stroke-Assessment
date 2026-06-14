@@ -1,7 +1,4 @@
-"use server";
-
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { getServerSession } from "@/hooks/get-server-session";
 import { roleHome } from "@/lib/auth-routing";
 import prisma from "@/lib/prisma";
 
@@ -43,7 +40,7 @@ function parseDoctorIntent(token: string) {
   return intent;
 }
 
-export async function createDoctorRegistrationIntent(email: string) {
+export function createDoctorRegistrationIntent(email: string) {
   const intent: DoctorIntent = {
     email: email.trim().toLowerCase(),
     role: "doctor",
@@ -60,10 +57,13 @@ export async function startDoctorRegistration(emailInput: string, token: string)
 
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, role: true },
+    select: { id: true, role: true, emailVerified: true },
   });
   if (!user) throw new Error("Create your account before continuing.");
   if (user.role?.toLowerCase() === "admin") throw new Error("Invalid account role.");
+  if (user.emailVerified && user.role?.toLowerCase() !== "doctor") {
+    throw new Error("This verified account cannot be converted to a doctor account.");
+  }
 
   await prisma.$transaction([
     prisma.user.update({ where: { id: user.id }, data: { role: "doctor" } }),
@@ -105,7 +105,7 @@ export async function completeDoctorRegistration(input: {
     },
   });
   if (!user?.emailVerified) throw new Error("Verify your email before continuing.");
-  if (user.role?.toLowerCase() === "admin") throw new Error("Invalid account role.");
+  if (user.role?.toLowerCase() !== "doctor") throw new Error("Invalid account role.");
   if (user.doctorProfile?.licenseNumber) {
     throw new Error("Your doctor profile has already been submitted.");
   }
@@ -113,7 +113,7 @@ export async function completeDoctorRegistration(input: {
   await prisma.$transaction([
     prisma.user.update({
       where: { id: user.id },
-      data: { role: "doctor", phoneNumber },
+      data: { phoneNumber },
     }),
     prisma.doctorProfile.upsert({
       where: { userId: user.id },
@@ -140,22 +140,20 @@ export async function completeDoctorRegistration(input: {
   ]);
 }
 
-export async function getPostLoginDestination() {
-  const session = await getServerSession();
-  if (!session?.user) {
-    return { destination: "/auth/login", blocked: false, reason: null };
-  }
-
-  if (session.user.role?.toLowerCase() !== "doctor") {
+export async function getPostLoginDestination(user: {
+  id: string;
+  role?: string | null;
+}) {
+  if (user.role?.toLowerCase() !== "doctor") {
     return {
-      destination: roleHome(session.user.role),
+      destination: roleHome(user.role),
       blocked: false,
       reason: null,
     };
   }
 
   const profile = await prisma.doctorProfile.findUnique({
-    where: { userId: session.user.id },
+    where: { userId: user.id },
     select: {
       specialization: true,
       hospitalName: true,

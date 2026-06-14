@@ -10,7 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { getPostLoginDestination } from "@/actions/auth/registration";
+import { accountFlow } from "@/lib/account-flow-client";
+
+type PostLoginDestination = {
+  destination: string;
+  blocked: boolean;
+  reason: string | null;
+};
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -33,7 +39,9 @@ export default function LoginForm() {
         return;
       }
       if (data) {
-        const access = await getPostLoginDestination();
+        const access = await accountFlow<PostLoginDestination>({
+          operation: "post-login-destination",
+        });
         if (access.blocked) {
           await authClient.signOut();
           const message =

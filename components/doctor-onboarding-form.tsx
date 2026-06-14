@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { completeDoctorRegistration } from "@/actions/auth/registration";
+import { accountFlow } from "@/lib/account-flow-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +32,8 @@ export function DoctorOnboardingForm() {
     setMessage(null);
     startTransition(async () => {
       try {
-        await completeDoctorRegistration({
+        await accountFlow({
+          operation: "complete-doctor-registration",
           token,
           email,
           specialization,

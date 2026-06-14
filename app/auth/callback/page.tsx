@@ -4,7 +4,13 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { getPostLoginDestination } from "@/actions/auth/registration";
+import { accountFlow } from "@/lib/account-flow-client";
+
+type PostLoginDestination = {
+  destination: string;
+  blocked: boolean;
+  reason: string | null;
+};
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -23,7 +29,9 @@ export default function AuthCallback() {
         }
 
         if (session) {
-          const access = await getPostLoginDestination();
+          const access = await accountFlow<PostLoginDestination>({
+            operation: "post-login-destination",
+          });
           if (access.blocked) await authClient.signOut();
           router.replace(access.destination);
         } else {

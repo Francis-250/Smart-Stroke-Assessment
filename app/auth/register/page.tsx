@@ -11,10 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { User, Stethoscope } from "lucide-react";
-import {
-  createDoctorRegistrationIntent,
-  startDoctorRegistration,
-} from "@/actions/auth/registration";
+import { accountFlow } from "@/lib/account-flow-client";
 
 export default function Register() {
   const router = useRouter();
@@ -53,7 +50,12 @@ export default function Register() {
       const verificationEmail = email.trim().toLowerCase();
       const doctorIntent =
         selectedRole === "doctor"
-          ? await createDoctorRegistrationIntent(verificationEmail)
+          ? (
+              await accountFlow<{ token: string }>({
+                operation: "create-doctor-intent",
+                email: verificationEmail,
+              })
+            ).token
           : null;
       const { data, error } = await authClient.signUp.email({
         email: verificationEmail,
@@ -70,7 +72,11 @@ export default function Register() {
 
       if (data) {
         if (doctorIntent) {
-          await startDoctorRegistration(verificationEmail, doctorIntent);
+          await accountFlow({
+            operation: "start-doctor-registration",
+            email: verificationEmail,
+            token: doctorIntent,
+          });
         }
         sessionStorage.setItem("verifyEmail", verificationEmail);
         sessionStorage.setItem("registrationRole", selectedRole ?? "patient");
