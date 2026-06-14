@@ -196,17 +196,21 @@ model PatientProfile {
 }
 
 model DoctorProfile {
-  id               String          @id @default(cuid())
-  userId           String          @unique
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  specialization   String?
-  hospitalName     String?
-  licenseNumber    String?         @unique
-  isVerified       Boolean         @default(false)
-  verifiedAt       DateTime?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  comments         DoctorComment[]
+  id                    String          @id @default(cuid())
+  userId                String          @unique
+  user                  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialization        String?
+  hospitalName          String?
+  licenseNumber         String?         @unique
+  isVerified            Boolean         @default(false)
+  verifiedAt            DateTime?
+  isApprovedByAdmin     Boolean         @default(false)
+  approvedByAdminAt     DateTime?
+  approvalRejectedAt    DateTime?
+  approvalRejectionReason String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  comments              DoctorComment[]
 
   @@map("doctor_profile")
 }
