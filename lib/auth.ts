@@ -2,12 +2,14 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./prisma";
 import {
-  admin,
+  admin as adminPlugin,
   emailOTP,
   phoneNumber,
   twoFactor,
   username,
 } from "better-auth/plugins";
+
+import { ac, admin, doctor, patient } from "./permission";
 import { nextCookies } from "better-auth/next-js";
 import { sendEmail } from "./brevo";
 
@@ -33,10 +35,12 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
   },
+  appName: "Smart Stroke Assessment System",
   plugins: [
-    admin({
+    adminPlugin({
       defaultRole: "patient",
-      adminRoles: ["admin"],
+      ac,
+      roles: {admin, doctor, patient}
     }),
     phoneNumber(),
     username(),
@@ -76,7 +80,7 @@ export const auth = betterAuth({
           });
         }
       },
-    }),
+    }), 
     nextCookies(),
   ],
 });

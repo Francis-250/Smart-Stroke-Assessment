@@ -20,6 +20,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Smart Stroke Assessment",
   description: "AI-powered stroke detection system",
+  icons: {
+    icon: "/images/favi.jpeg",
+  },
 };
 
 export default function RootLayout({

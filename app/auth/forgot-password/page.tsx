@@ -4,98 +4,103 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     const { error } = await authClient.requestPasswordReset({
       email,
       redirectTo: "/auth/reset-password",
     });
+    setLoading(false);
 
     if (error) {
       toast.error(error.message);
       return;
     }
+
+    toast.success("Reset link sent to your email!");
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-4 md:px-8">
-      <div className="grid max-w-lg items-center gap-12 lg:max-w-6xl lg:grid-cols-2">
+    <main className="flex min-h-screen items-center justify-center px-4 py-12">
+      <div className="grid w-full max-w-5xl gap-12 lg:grid-cols-2 lg:items-center">
+        {/* Left */}
         <div>
-          <h2 className="text-4xl font-bold leading-tight text-gray-900 dark:text-gray-100 lg:text-5xl">
-            Forgot Your Password?
-          </h2>
-          <p className="mt-6 text-base leading-relaxed text-gray-600 dark:text-gray-400">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">
+            StrokeCheck
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight leading-tight mb-4">
+            Forgot Your <br /> Password?
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
             Don&apos;t worry! Enter your email address and we&apos;ll send you a
             link to reset your password.
           </p>
-
-          <div className="mt-6 text-sm text-gray-900 dark:text-gray-100 lg:mt-12">
+          <p className="mt-10 text-sm text-muted-foreground">
             Remember your password?{" "}
             <Link
               href="/auth/login"
-              className="ml-1 font-medium text-blue-600 hover:underline dark:text-blue-500"
+              className="font-medium text-foreground underline underline-offset-4"
             >
               Back to sign in
             </Link>
-          </div>
+          </p>
         </div>
 
-        <div className="w-full max-w-md lg:ml-auto">
-          <h1 className="mb-10 text-3xl font-bold text-gray-900 dark:text-gray-100">
+        {/* Right */}
+        <div className="w-full rounded-lg border p-8">
+          <h2 className="text-xl font-semibold tracking-tight mb-6">
             Reset password
-          </h1>
+          </h2>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 inline-block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-xs">
                 Email address
-              </label>
-              <input
-                type="email"
+              </Label>
+              <Input
                 id="email"
-                name="email"
+                type="email"
                 placeholder="youremail@example.com"
-                onChange={(e) => setEmail(e.target.value)}
-                value={email}
                 required
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-9 text-sm"
               />
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 We&apos;ll send a reset link to this email address
               </p>
             </div>
 
-            <button
-              type="submit"
-              className="w-full cursor-pointer rounded-md bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white transition-all hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            >
-              Send reset link
-            </button>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-background/40 border-t-background animate-spin" />
+              ) : (
+                "Send reset link"
+              )}
+            </Button>
           </form>
 
-          <div className="my-8 flex items-center gap-4">
-            <hr className="w-full border-gray-300 dark:border-gray-700" />
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-              or
-            </p>
-            <hr className="w-full border-gray-300 dark:border-gray-700" />
+          <div className="my-6 flex items-center gap-3">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <Separator className="flex-1" />
           </div>
 
-          <div>
-            <Link
-              href="/auth/login"
-              className="flex w-full items-center justify-center gap-2.5 rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
-            >
+          <Link href="/auth/login">
+            <Button variant="outline" className="w-full text-sm">
               ← Back to sign in
-            </Link>
-          </div>
+            </Button>
+          </Link>
         </div>
       </div>
     </main>

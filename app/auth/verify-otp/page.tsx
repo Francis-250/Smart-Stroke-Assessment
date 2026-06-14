@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 export default function VerifyOTP() {
   const router = useRouter();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -116,7 +119,7 @@ export default function VerifyOTP() {
       return;
     }
 
-    setLoading(true);
+    setResendLoading(true);
 
     try {
       const { error } = await authClient.emailOtp.sendVerificationOtp({
@@ -126,56 +129,64 @@ export default function VerifyOTP() {
 
       if (error) {
         toast.error(error.message || "Failed to resend code");
-        setLoading(false);
+        setResendLoading(false);
         return;
       }
 
       toast.success("New verification code sent to your email!");
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
     } catch (error) {
       console.error("Resend error:", error);
       toast.error("Something went wrong. Please try again.");
     } finally {
-      setLoading(false);
+      setResendLoading(false);
     }
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-white px-4 py-4 dark:bg-slate-950 md:px-8">
-      <div className="grid max-w-lg items-center gap-12 lg:max-w-6xl lg:grid-cols-2">
+    <main className="flex min-h-screen items-center justify-center px-4 py-12">
+      <div className="grid w-full max-w-5xl gap-12 lg:grid-cols-2 lg:items-center">
+        {/* Left */}
         <div>
-          <h2 className="text-4xl font-bold leading-tight text-slate-900 dark:text-slate-100 lg:text-5xl">
-            Verify Your Identity
-          </h2>
-          <p className="mt-6 text-base leading-relaxed text-slate-600 dark:text-slate-400">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">
+            StrokeCheck
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight leading-tight mb-4">
+            Verify Your <br /> Identity
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
             We&apos;ve sent a 6-digit verification code to your email address.
             Enter the code below to continue.
           </p>
-
-          <div className="mt-6 text-sm text-slate-900 dark:text-slate-100 lg:mt-12">
+          <p className="mt-10 text-sm text-muted-foreground">
             Didn&apos;t receive the code?{" "}
             <button
               onClick={handleResendCode}
-              disabled={loading}
-              className="ml-1 font-medium text-blue-600 hover:underline disabled:opacity-50 dark:text-blue-500"
+              disabled={resendLoading}
+              className="font-medium text-foreground underline underline-offset-4 disabled:opacity-50"
             >
-              Resend code
+              {resendLoading ? "Sending..." : "Resend code"}
             </button>
-          </div>
+          </p>
         </div>
 
-        <div className="w-full max-w-md lg:ml-auto">
-          <h1 className="mb-6 text-3xl font-bold text-slate-900 dark:text-slate-100">
+        {/* Right */}
+        <div className="w-full rounded-lg border p-8">
+          <h2 className="text-xl font-semibold tracking-tight mb-6">
             Enter OTP
-          </h1>
+          </h2>
+
           {email && (
-            <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
-              Verifying: <span className="font-medium">{email}</span>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Verifying:{" "}
+              <span className="font-medium text-foreground">{email}</span>
             </p>
           )}
 
-          <form className="space-y-6" onSubmit={handleVerify}>
+          <form onSubmit={handleVerify} className="space-y-6">
             <div>
-              <label className="mb-4 inline-block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="mb-4 inline-block text-xs font-medium">
                 Verification code
               </label>
               <div className="flex gap-3">
@@ -192,40 +203,35 @@ export default function VerifyOTP() {
                     onChange={(e) => handleChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={index === 0 ? handlePaste : undefined}
-                    className="h-14 w-full rounded-lg border border-slate-200 bg-white text-center text-xl font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    className="h-14 w-full rounded-md border bg-background text-center text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 ))}
               </div>
-              <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-4 text-center text-xs text-muted-foreground">
                 Enter the 6-digit code sent to your email
               </p>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full cursor-pointer rounded-lg bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {loading ? "Verifying..." : "Verify Email"}
-            </button>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-background/40 border-t-background animate-spin" />
+              ) : (
+                "Verify Email"
+              )}
+            </Button>
           </form>
 
-          <div className="my-8 flex items-center gap-4">
-            <hr className="w-full border-slate-200 dark:border-slate-700" />
-            <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-              or
-            </p>
-            <hr className="w-full border-slate-200 dark:border-slate-700" />
+          <div className="my-6 flex items-center gap-3">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <Separator className="flex-1" />
           </div>
 
-          <div>
-            <Link
-              href="/auth/login"
-              className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-            >
+          <Link href="/auth/login">
+            <Button variant="outline" className="w-full text-sm">
               ← Back to sign in
-            </Link>
-          </div>
+            </Button>
+          </Link>
         </div>
       </div>
     </main>

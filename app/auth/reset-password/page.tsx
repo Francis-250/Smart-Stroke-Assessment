@@ -1,126 +1,143 @@
 "use client";
+
 import React, { useState } from "react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { useSearchParams } from "next/navigation";
-import { it } from "node:test";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) return;
 
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+
+    if (!token) {
+      toast.error("Invalid reset token");
+      return;
+    }
+
+    setLoading(true);
     const { error } = await authClient.resetPassword({
       newPassword: password,
       token,
     });
+    setLoading(false);
 
     if (error) {
       toast.error(error.message);
+    } else {
+      toast.success("Password reset successfully!");
     }
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-4 md:px-8">
-      <div className="grid max-w-lg items-center gap-12 lg:max-w-6xl lg:grid-cols-2">
+    <main className="flex min-h-screen items-center justify-center px-4 py-12">
+      <div className="grid w-full max-w-5xl gap-12 lg:grid-cols-2 lg:items-center">
+        {/* Left */}
         <div>
-          <h2 className="text-4xl font-bold leading-tight text-gray-900 dark:text-gray-100 lg:text-5xl">
-            Create New Password
-          </h2>
-          <p className="mt-6 text-base leading-relaxed text-gray-600 dark:text-gray-400">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">
+            StrokeCheck
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight leading-tight mb-4">
+            Create New <br /> Password
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
             Your new password must be different from your previously used
             passwords and should be at least 8 characters long.
           </p>
-
-          <div className="mt-6 text-sm text-gray-900 dark:text-gray-100 lg:mt-12">
+          <p className="mt-10 text-sm text-muted-foreground">
             <Link
               href="/auth/login"
-              className="font-medium text-blue-600 hover:underline dark:text-blue-500"
+              className="font-medium text-foreground underline underline-offset-4"
             >
               ← Back to sign in
             </Link>
-          </div>
+          </p>
         </div>
 
-        <div className="w-full max-w-md lg:ml-auto">
-          <h1 className="mb-10 text-3xl font-bold text-gray-900 dark:text-gray-100">
+        {/* Right */}
+        <div className="w-full rounded-lg border p-8">
+          <h2 className="text-xl font-semibold tracking-tight mb-6">
             Reset password
-          </h1>
+          </h2>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-2 inline-block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-xs">
                 New password
-              </label>
+              </Label>
               <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
+                <Input
                   id="password"
-                  name="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 pr-10 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  className="h-9 text-sm pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm"
                 >
                   {showPassword ? "👁️" : "👁️‍🗨️"}
                 </button>
               </div>
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 Password must be at least 8 characters
               </p>
             </div>
 
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="mb-2 inline-block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+            <div className="space-y-1.5">
+              <Label htmlFor="confirmPassword" className="text-xs">
                 Confirm new password
-              </label>
+              </Label>
               <div className="relative">
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
+                <Input
                   id="confirmPassword"
-                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="••••••••"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 pr-10 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  className="h-9 text-sm pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm"
                 >
                   {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
                 </button>
               </div>
             </div>
 
-            <div className="rounded-md bg-blue-50 p-4 dark:bg-blue-950/30">
-              <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                Password requirements:
-              </p>
-              <ul className="mt-2 list-inside list-disc text-xs text-blue-700 dark:text-blue-400">
+            <div className="rounded-md bg-muted p-4">
+              <p className="text-sm font-medium">Password requirements:</p>
+              <ul className="mt-2 list-inside list-disc text-xs text-muted-foreground">
                 <li>At least 8 characters long</li>
                 <li>Contains uppercase and lowercase letters</li>
                 <li>Contains at least one number</li>
@@ -128,13 +145,26 @@ export default function ResetPassword() {
               </ul>
             </div>
 
-            <button
-              type="submit"
-              className="w-full cursor-pointer rounded-md bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white transition-all hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            >
-              Reset password
-            </button>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-background/40 border-t-background animate-spin" />
+              ) : (
+                "Reset password"
+              )}
+            </Button>
           </form>
+
+          <div className="my-6 flex items-center gap-3">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <Separator className="flex-1" />
+          </div>
+
+          <Link href="/auth/login">
+            <Button variant="outline" className="w-full text-sm">
+              ← Back to sign in
+            </Button>
+          </Link>
         </div>
       </div>
     </main>
