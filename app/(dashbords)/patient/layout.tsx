@@ -1,5 +1,5 @@
 import PatientNav from "@/components/layout/patient-nav";
-import { getServerSession } from "@/hooks/get-server-session";
+import { requirePatientPage } from "@/lib/patient-auth";
 import prisma from "@/lib/prisma";
 
 function initials(name?: string | null) {
@@ -19,15 +19,13 @@ export default async function PatientLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession();
-  const unreadCount = session?.user
-    ? await prisma.notification.count({
-        where: {
-          userId: session.user.id,
-          status: "UNREAD",
-        },
-      })
-    : 0;
+  const session = await requirePatientPage();
+  const unreadCount = await prisma.notification.count({
+    where: {
+      userId: session.user.id,
+      status: "UNREAD",
+    },
+  });
 
   return (
     <div className="min-h-screen bg-background">

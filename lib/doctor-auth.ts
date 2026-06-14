@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "@/hooks/get-server-session";
+import { roleHome } from "@/lib/auth-routing";
 
 export function isDoctorRole(role?: string | null) {
   return role?.toLowerCase() === "doctor";
@@ -13,7 +14,7 @@ export async function requireDoctorPage() {
   }
 
   if (!isDoctorRole(session.user.role)) {
-    redirect("/patient");
+    redirect(roleHome(session.user.role));
   }
 
   return session;

@@ -1,9 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, Stethoscope, Bell, User } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Home, Stethoscope, Bell, User, LogOut } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const links = [
   { label: "Home", href: "/patient", icon: Home },
@@ -20,6 +30,13 @@ export default function PatientNav({
   unreadCount?: number;
 }) {
   const path = usePathname();
+  const router = useRouter();
+
+  const signOut = async () => {
+    await authClient.signOut();
+    router.replace("/auth/login");
+    router.refresh();
+  };
 
   return (
     <>
@@ -58,9 +75,26 @@ export default function PatientNav({
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full" />
               )}
             </Link>
-            <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-              {initials ?? "--"}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm" className="rounded-full">
+                  <span className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+                    {initials ?? "--"}
+                  </span>
+                  <span className="sr-only">Open account menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuLabel>Patient account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/patient/profile"><User size={14} /> Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onSelect={signOut}>
+                  <LogOut size={14} /> Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
@@ -85,6 +119,14 @@ export default function PatientNav({
             </Link>
           );
         })}
+        <button
+          type="button"
+          onClick={signOut}
+          className="flex-1 flex flex-col items-center gap-1 pt-3 pb-5 text-[11px] text-muted-foreground transition-colors"
+        >
+          <LogOut size={20} strokeWidth={1.5} />
+          Sign out
+        </button>
       </nav>
     </>
   );

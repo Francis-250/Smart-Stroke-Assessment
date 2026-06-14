@@ -4,6 +4,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { roleHome } from "@/lib/auth-routing";
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -22,17 +23,7 @@ export default function AuthCallback() {
         }
 
         if (session) {
-          const role = session.user.role;
-
-          if (role === "admin") {
-            router.push("/admin");
-          } else if (role === "patient") {
-            router.push("/patient");
-          } else if (role === "doctor") {
-            router.push("/doctor");
-          } else {
-            router.push("/");
-          }
+          router.replace(roleHome(session.user.role));
         } else {
           setError("No session found");
           setTimeout(() => router.push("/auth/login"), 2000);
