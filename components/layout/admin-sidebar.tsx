@@ -34,7 +34,7 @@ const links = [
   { label: "Doctor feedback", href: "/admin/feedback", icon: MessageSquare },
   { label: "Audit logs", href: "/admin/audit", icon: FileClock },
   { label: "AI operations", href: "/admin/ai", icon: Brain },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
+  { label: "Profile", href: "/admin/settings", icon: Settings },
 ];
 
 function Content({ name, mobile = false }: { name: string; mobile?: boolean }) {

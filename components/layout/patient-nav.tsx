@@ -18,7 +18,7 @@ import {
 const links = [
   { label: "Home", href: "/patient", icon: Home },
   { label: "Assessment", href: "/patient/assessment", icon: Stethoscope },
-  { label: "Alerts", href: "/patient/notifications", icon: Bell },
+  // { label: "Alerts", href: "/patient/notifications", icon: Bell },
   { label: "Profile", href: "/patient/profile", icon: User },
 ];
 
@@ -87,9 +87,9 @@ export default function PatientNav({
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuLabel>Patient account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
+                {/* <DropdownMenuItem asChild>
                   <Link href="/patient/profile"><User size={14} /> Profile</Link>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 <DropdownMenuItem variant="destructive" onSelect={signOut}>
                   <LogOut size={14} /> Sign out
                 </DropdownMenuItem>
