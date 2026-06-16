@@ -249,39 +249,120 @@ export default async function SingleAssessment({
         </div>
 
         <div className="lg:col-span-2 space-y-4">
-          <div
-            className={cn(
-              "rounded-lg border p-4",
-              assessment.riskLevel === "HIGH"
-                ? "border-red-200 bg-red-50"
-                : assessment.riskLevel === "MEDIUM"
-                  ? "border-amber-200 bg-amber-50"
-                  : "border-green-200 bg-green-50",
-            )}
-          >
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-              Recommendation
-            </p>
-            <p className="text-sm leading-relaxed">
-              {assessment.recommendation}
-            </p>
-          </div>
-
-          <div className="rounded-lg border p-5">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
-                <Brain size={13} className="text-muted-foreground" />
+          <div className="rounded-xl border overflow-hidden bg-card">
+            <div className="border-b px-5 py-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className={cn("mt-0.5 flex size-10 items-center justify-center rounded-lg border", c.ring)}>
+                    <Icon size={18} className={c.iconColor} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      AI result summary
+                    </p>
+                    <h2 className="mt-1 text-lg font-semibold tracking-tight">
+                      {c.label} assessment
+                    </h2>
+                  </div>
+                </div>
+                <Badge variant="outline" className={cn("border", c.badge)}>
+                  {confidence}% confidence
+                </Badge>
               </div>
-              <div>
-                <p className="text-sm font-medium">AI assessment</p>
-                <p className="text-xs text-muted-foreground">
-                  Groq LLaMA 3.3 70B
+            </div>
+
+            <div className="grid gap-px bg-border sm:grid-cols-3">
+              <div className="bg-background p-4">
+                <p className="text-xs text-muted-foreground">Risk level</p>
+                <p className={cn("mt-1 text-xl font-semibold", c.labelColor)}>
+                  {assessment.riskLevel}
+                </p>
+              </div>
+              <div className="bg-background p-4">
+                <p className="text-xs text-muted-foreground">FAST indicators</p>
+                <p className="mt-1 text-xl font-semibold">
+                  {assessment.fastScore}/4
+                </p>
+              </div>
+              <div className="bg-background p-4">
+                <p className="text-xs text-muted-foreground">Review status</p>
+                <p className="mt-1 text-xl font-semibold">
+                  {assessment.reviewedByDoctor ? "Reviewed" : "Pending"}
                 </p>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-              {assessment.aiResponse}
-            </p>
+
+            <div className="p-5 space-y-5">
+              <div>
+                <div className="mb-2 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Confidence score</span>
+                  <span className="font-medium">{confidence}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full", c.bar)}
+                    style={{ width: `${confidence}%` }}
+                  />
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  "rounded-lg border p-4",
+                  assessment.riskLevel === "HIGH"
+                    ? "border-red-200 bg-red-50"
+                    : assessment.riskLevel === "MEDIUM"
+                      ? "border-amber-200 bg-amber-50"
+                      : "border-green-200 bg-green-50",
+                )}
+              >
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                  Recommended next step
+                </p>
+                <p className="text-sm leading-relaxed">
+                  {assessment.recommendation}
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-[0.7fr_1.3fr]">
+                <div className="rounded-lg border p-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+                    Symptoms used
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {symptoms.length > 0 ? (
+                      symptoms.map((symptom) => (
+                        <span
+                          key={symptom}
+                          className="rounded-md bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                        >
+                          {symptom}
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-xs text-muted-foreground">None flagged</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <div className="flex size-7 items-center justify-center rounded-full bg-muted">
+                      <Brain size={13} className="text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">AI explanation</p>
+                      <p className="text-xs text-muted-foreground">
+                        Groq LLaMA 3.3 70B
+                      </p>
+                    </div>
+                  </div>
+                  <p className="max-h-[28rem] overflow-y-auto pr-2 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                    {assessment.aiResponse}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {latestComment && (
